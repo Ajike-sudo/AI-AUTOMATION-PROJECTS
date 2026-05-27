@@ -1,0 +1,1070 @@
+{
+  "name": "Outgrower's Activation Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1r7lbpsXnr-68qVXeQEEqNQQSRQGqPUnnzQsheHKgT-I",
+          "mode": "list",
+          "cachedResultName": "Hastom database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1r7lbpsXnr-68qVXeQEEqNQQSRQGqPUnnzQsheHKgT-I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 603463023,
+          "mode": "list",
+          "cachedResultName": "Form Responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1r7lbpsXnr-68qVXeQEEqNQQSRQGqPUnnzQsheHKgT-I/edit#gid=603463023"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        -64
+      ],
+      "id": "4bcd8b3e-b582-4a5d-b2ff-2964da581016",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "VBtHzURS3QFkiFAp",
+          "name": "Google Sheets Trigger OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0d1c8426-0877-49ce-939f-9ab80c961f95",
+              "name": "Status",
+              "value": "New",
+              "type": "string"
+            },
+            {
+              "id": "d5abe4ba-85aa-4f6c-8197-bbb810f924af",
+              "name": "=Onboarding date",
+              "value": "={{new Date().toISOString().slice(0,10)}}",
+              "type": "string"
+            },
+            {
+              "id": "63c09d40-7c0c-41fe-bffa-160b76deab3f",
+              "name": "=Manager Assigned",
+              "value": "={{$json[\"Location\"].includes(\"Ibadan\") ? \"Manager Femi\" : $json[\"Location\"].includes(\"Ogbomoso\") ? \"Manager Sodiq\" : $json[\"Location\"].includes(\"Ilorin\") ? \"Manager Frank\" : \"Manager Sodiq\"}}",
+              "type": "string"
+            },
+            {
+              "id": "bc6b6167-afc6-4da4-bb8f-031cb7e6cff9",
+              "name": "Manager Mail",
+              "value": "={{$json[\"Location\"].includes(\"Ibadan\") ? \"onisemotobi@gmail.com\" : $json[\"Location\"].includes(\"Ogbomoso\") ? \"evapens2u@gmail.com\" : $json[\"Location\"].includes(\"Ilorin\") ? \"sarahabisogun@gmail.com\" : \"evapens2u@gmail.com\"}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        176,
+        -64
+      ],
+      "id": "c80eeb8d-2014-4567-bc65-0fd93b6a0efc",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "=Welcome to Hastom Grower Network, {{ $json['Full name'] }}",
+        "message": "=<p>Dear {{ $json['Full name'] }},</p>\n\n<p>We're glad to have you as part of the Hastom Grower Network. Your registration has been received and your profile is now active in our system.</p>\n\n<p>{{ $('Edit Fields').item.json['Manager Assigned'] }} is your dedicated point of contact for everything — supply schedules, payments, field support, and any questions you have along the way.</p>\n\n<p>You should get contacted within 48 hours to schedule an onboarding call, during that call, you'll go over farm assessment, quality standards, and your first supply agreement. Once your farm is verified, you'll be officially added to our active grower list.</p>\n\n<p>Hastom Food & Farms is building Nigeria's most reliable outgrower network for agro-commodities. As a network member, you get access to guaranteed offtake, fair pricing, and agronomy support designed to improve your yield and income over time.</p>\n\n<p>If you have any immediate questions, reply to this email or call us at 08163013001.</p>\n\n<p>Welcome aboard.</p>\n\n<p>Warm regards, \n<br>Head of Operations</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        624,
+        -64
+      ],
+      "id": "379cc513-efee-4377-9b0c-e76f1fcd91b9",
+      "name": "Send a message",
+      "webhookId": "6eaee00c-190d-4eb6-b15b-eedea1967a3e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "oykwNIv9XJQn86TB",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Edit Fields').item.json['Manager Mail'] }}",
+        "subject": "New Outgrower Onboarded — Action Required",
+        "message": "=<p>Hi {{ $('Edit Fields').item.json['Manager Assigned'] }},</p>\n\n<p>A new outgrower has just been registered on the Hastom Outgrower Network and assigned to you. \nPlease initiate contact within 48 hours.</p>\n\n<p><strong>Outgrower Details</p>\nName: {{ $('Google Sheets Trigger').item.json['Full name'] }}\n<br>Phone: {{ $('Google Sheets Trigger').item.json['Phone number'] }}\n<br>Location: {{ $('Google Sheets Trigger').item.json.Location }}\n<br>Farm Size: {{ $('Google Sheets Trigger').item.json['Farm size'] }}\n<br>Crop Type:{{ $('Google Sheets Trigger').item.json['Crop type'] }}\n<br>Onboarding Date:{{ $('Edit Fields').item.json['Onboarding date'] }}\n\n<p><strong>Your Action</p>\nCall or message the grower within 48 hours to schedule an onboarding visit. Once the farm assessment is done, click the link <a href=\"https://onisemotobiloba.app.n8n.cloud/webhook/update_outgrower_status?email={{ $('Google Sheets Trigger').item.json.Email }}&name={{ $('Google Sheets Trigger').item.json['Full name'] }}\"\nstyle=\"background-color:#2E7D32;color:white;padding:5x 10px;text-decoration:none;border-radius:5px;\">\n  ✅ Status Update\n</a> to change their status to active.</p>\n\n<p>If you have any issues reaching the grower, escalate to operations immediately.</p>\n\n<p>Regards,\n<br>Hastom Operations</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        832,
+        -64
+      ],
+      "id": "874ff8df-59cc-4c2b-92f0-77711b298fb2",
+      "name": "Send a message1",
+      "webhookId": "d53d930c-a15e-4488-b36f-55f4760e40fe",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "oykwNIv9XJQn86TB",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 48,
+        "unit": "hours"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1040,
+        -48
+      ],
+      "id": "12713e10-47cc-4cbe-8107-c2873df48476",
+      "name": "Wait",
+      "webhookId": "b16e5cf2-bfee-45f7-a289-c3f55dbdad1f"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1r7lbpsXnr-68qVXeQEEqNQQSRQGqPUnnzQsheHKgT-I",
+          "mode": "list",
+          "cachedResultName": "Hastom database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1r7lbpsXnr-68qVXeQEEqNQQSRQGqPUnnzQsheHKgT-I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 603463023,
+          "mode": "list",
+          "cachedResultName": "Form Responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1r7lbpsXnr-68qVXeQEEqNQQSRQGqPUnnzQsheHKgT-I/edit#gid=603463023"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Email",
+              "lookupValue": "={{ $('Google Sheets Trigger').item.json['Email'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1248,
+        -48
+      ],
+      "id": "5eb0b4ed-d11a-4c17-ad69-95cbd470c3e6",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "k4LCHw1t1WvgQYZ5",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bf329c56-1b50-4770-895c-ae2450ac2a57",
+              "leftValue": "={{ $json.Status }}",
+              "rightValue": "Active",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "ab70296e-cd71-4e89-b1de-6e294406b0d2",
+              "leftValue": "={{ $json.Status }}",
+              "rightValue": "New",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1456,
+        -48
+      ],
+      "id": "37893ae4-7ae0-4598-be29-06f54b19637f",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "=onisemotobiloba@gmail.com",
+        "subject": "=New Outgrower, {{ $json['Full name'] }} Not Contacted — Action Required",
+        "message": "=<p>This is to notify you that the outgrower assigned to {{ $('Update row in sheet1').item.json['Manager assigned'] }}  has not yet been contacted or activated within the expected 48-hour window.</p>\n\n<p><strong>Outgrower Details</strong><br>\n<strong>Name:</strong> {{ $('Update row in sheet1').item.json['Full name'] }} <br>\n<strong>Phone:</strong> {{ $('Google Sheets Trigger').first().json[\"Phone number\"] }}<br>\n<strong>Location:</strong> {{ $('Google Sheets Trigger').first().json[\"Location\"] }}<br>\n<strong>Assigned Manager:</strong> {{ $('Update row in sheet1').item.json['Manager assigned'] }}</p>\n\n<p>Please review this case and ensure the assigned manager follows up immediately to activate and update the outgrower’s status accordingly.</p>\n\n<p>Regards,<br>\n<strong>Head of Operations</strong></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1664,
+        48
+      ],
+      "id": "2a769760-ac6a-416e-9b68-845191e59fb0",
+      "name": "Send a message2",
+      "webhookId": "4f59de74-c98d-44b5-aa2f-610127940e3e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "oykwNIv9XJQn86TB",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "update_outgrower_status",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        976,
+        304
+      ],
+      "id": "b858a043-8a66-4bea-81df-3ad73fdc1d20",
+      "name": "Webhook",
+      "webhookId": "47f64407-4aca-4296-9a9b-d6bcabbbdd3d"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1r7lbpsXnr-68qVXeQEEqNQQSRQGqPUnnzQsheHKgT-I",
+          "mode": "list",
+          "cachedResultName": "Hastom database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1r7lbpsXnr-68qVXeQEEqNQQSRQGqPUnnzQsheHKgT-I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 603463023,
+          "mode": "list",
+          "cachedResultName": "Form Responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1r7lbpsXnr-68qVXeQEEqNQQSRQGqPUnnzQsheHKgT-I/edit#gid=603463023"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Email",
+              "lookupValue": "={{ $json.Email }}"
+            },
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "Active"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1392,
+        304
+      ],
+      "id": "01d24b48-b8d3-4569-b2b0-03c0ba4ad7b3",
+      "name": "Get row(s) in sheet1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "k4LCHw1t1WvgQYZ5",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fa4100d0-c196-46a9-9667-814863edf9d6",
+              "leftValue": "={{ $('Edit Fields1').item.json.Email }}",
+              "rightValue": "={{$(\"Webhook\").first().json.query.email}}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        1600,
+        304
+      ],
+      "id": "547f0ff7-4d43-4b36-b0a9-e7b394323c06",
+      "name": "Filter",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "afa805fc-cfed-4b8e-a6f1-8fe71a75a834",
+              "name": "Email",
+              "value": "={{$json.query.email}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1184,
+        304
+      ],
+      "id": "3bba2f59-cfbf-47a6-83ee-c5a9a8eb571e",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1r7lbpsXnr-68qVXeQEEqNQQSRQGqPUnnzQsheHKgT-I",
+          "mode": "list",
+          "cachedResultName": "Hastom database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1r7lbpsXnr-68qVXeQEEqNQQSRQGqPUnnzQsheHKgT-I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 603463023,
+          "mode": "list",
+          "cachedResultName": "Form Responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1r7lbpsXnr-68qVXeQEEqNQQSRQGqPUnnzQsheHKgT-I/edit#gid=603463023"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $('Edit Fields1').item.json.Email }}",
+            "Status": "Active"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Full name",
+              "displayName": "Full name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Phone number",
+              "displayName": "Phone number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Farm size",
+              "displayName": "Farm size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Crop type",
+              "displayName": "Crop type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email Address",
+              "displayName": "Email Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Manager assigned",
+              "displayName": "Manager assigned",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Manager Mail",
+              "displayName": "Manager Mail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Onboarding date",
+              "displayName": "Onboarding date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Contact date",
+              "displayName": "Contact date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "headers",
+              "displayName": "headers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "params",
+              "displayName": "params",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "webhookUrl",
+              "displayName": "webhookUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "executionMode",
+              "displayName": "executionMode",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1808,
+        304
+      ],
+      "id": "83256689-748a-432f-869c-01fe9876aac5",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "k4LCHw1t1WvgQYZ5",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=✅ Status Updated\nThe outgrower {{ $('Get row(s) in sheet1').item.json['Full name'] }} has been marked as Active successfully. ",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2016,
+        304
+      ],
+      "id": "5d0504b9-265a-422b-ad3a-3c9ca89a61a4",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1r7lbpsXnr-68qVXeQEEqNQQSRQGqPUnnzQsheHKgT-I",
+          "mode": "list",
+          "cachedResultName": "Hastom database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1r7lbpsXnr-68qVXeQEEqNQQSRQGqPUnnzQsheHKgT-I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 603463023,
+          "mode": "list",
+          "cachedResultName": "Form Responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1r7lbpsXnr-68qVXeQEEqNQQSRQGqPUnnzQsheHKgT-I/edit#gid=603463023"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $('Google Sheets Trigger').item.json.Timestamp }}",
+            "Full name": "={{ $('Google Sheets Trigger').item.json['Full name'] }}",
+            "Location": "={{ $('Google Sheets Trigger').item.json.Location }}",
+            "Phone number": "={{ $('Google Sheets Trigger').item.json['Phone number'] }}",
+            "Farm size": "={{ $('Google Sheets Trigger').item.json['Farm size'] }}",
+            "Crop type": "={{ $('Google Sheets Trigger').item.json['Crop type'] }}",
+            "Manager assigned": "={{ $json['Manager Assigned'] }}",
+            "Status": "={{ $json.Status }}",
+            "Onboarding date": "={{ $json['Onboarding date'] }}",
+            "Email": "={{ $('Google Sheets Trigger').item.json.Email }}",
+            "Manager Mail": "={{ $json['Manager Mail'] }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Full name",
+              "displayName": "Full name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone number",
+              "displayName": "Phone number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Farm size",
+              "displayName": "Farm size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Crop type",
+              "displayName": "Crop type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email Address",
+              "displayName": "Email Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Manager assigned",
+              "displayName": "Manager assigned",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Manager Mail",
+              "displayName": "Manager Mail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Onboarding date",
+              "displayName": "Onboarding date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Contact date",
+              "displayName": "Contact date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "headers",
+              "displayName": "headers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "params",
+              "displayName": "params",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "webhookUrl",
+              "displayName": "webhookUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "executionMode",
+              "displayName": "executionMode",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        416,
+        -64
+      ],
+      "id": "9c40bd36-4dc2-494e-bfdd-12e54448f287",
+      "name": "Update row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "k4LCHw1t1WvgQYZ5",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Update row in sheet1').item.json['Manager assigned'] }}",
+        "subject": "=<p>Hi {{ $('Update row in sheet1').item.json['Manager assigned'] }} ,</p>  <p>The outgrower was assigned to you and has not been contacted within 48 hours. Please follow up immediately.</p>  <p><strong>Outgrower Details</strong><br> <strong>Name:</strong> {{ $('Update row in sheet1').item.json['Full name'] }}<br> <strong>Phone:</strong> {{$('Google Sheets Trigger').first().json[\"Phone number\"]}}<br> <strong>Location:</strong> {{$('Google Sheets Trigger').first().json[\"Location\"]}}<br> <strong>Assigned Manager:</strong> {{ $('Update row in sheet1').item.json['Manager assigned'] }}</p>  <p>Please ensure the outgrower is contacted and their status updated immediately, click the link <a href=\"https://onisemotobiloba.app.n8n.cloud/webhook/update_outgrower_status?email={{ $('Google Sheets Trigger').item.json.Email }}&name={{ $('Google Sheets Trigger').item.json['Full name'] }}\" style=\"background-color:#2E7D32;color:white;padding:5x 10px;text-decoration:none;border-radius:5px;\">   ✅ Status Update </a> to change their status to active.</p></p>  <p>Regards,<br> <strong>Head of Operations</strong></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1872,
+        48
+      ],
+      "id": "e4339805-56af-4510-9735-0a7a3a1bce71",
+      "name": "Send a message3",
+      "webhookId": "954c4e52-716c-4667-b272-b0e2543e0d0f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "oykwNIv9XJQn86TB",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message1": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Send a message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message2": {
+      "main": [
+        [
+          {
+            "node": "Send a message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "dd0abff2-c303-4da9-ba10-99aaf16d943d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4e36c5c3491e48b4dc9d82f453ba485ae5395ea84e06195818538ac6035b5f29"
+  },
+  "id": "3tpW4Z9Njw9E8Ld2",
+  "tags": []
+}
