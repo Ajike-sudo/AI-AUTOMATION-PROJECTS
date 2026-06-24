@@ -1,0 +1,51 @@
+Feedback ID,Customer Name,Email,Comment,Rating (1-5),Sentiment,Score,Category
+FB-001,Amaka Adeyemi,amaka.adeyemi@gmail.com,The jollof rice was completely burnt and tasted like charcoal. Totally inedible.,1,Negative,2,Food Quality
+FB-002,Tunde Musa,tunde.musa@gmail.com,My delivery took 3 hours. The food was stone cold when it arrived.,2,Negative,2,Delivery
+FB-003,Ngozi Fashola,ngozi.fashola@gmail.com,The waiter was extremely rude and dismissed my complaint when I raised it.,2,Negative,2,Customer Service
+FB-004,Emeka Adesanya,emeka.adesanya@gmail.com,I ordered peppered chicken and received fish. Wrong order entirely.,1,Negative,3,Food Quality
+FB-005,Fatima Okonkwo,fatima.okonkwo@gmail.com,The pepper soup was delicious and arrived hot. Will definitely order again.,5,Positive,9,Positive
+FB-006,Chidi Lawal,chidi.lawal@gmail.com,Portion size was tiny for the price. Not worth ₦4500 at all.,2,Negative,3,Pricing
+FB-007,Yemi Bello,yemi.bello@gmail.com,I found a piece of plastic in my egusi soup. This is a serious health concern.,1,Negative,2,Food Quality
+FB-008,Kemi Okafor,kemi.okafor@gmail.com,Delivery rider was rude and dropped the food at the gate without calling.,3,Negative,3,Delivery
+FB-009,Biodun Musa,biodun.musa@gmail.com,The ofada rice was perfect. Best I have had in Ibadan. Lovely experience.,5,Positive,10,Positive
+FB-010,Uche Akande,uche.akande@gmail.com,Food was good but the packaging leaked and stained my car seat.,2,Negative,3,Food Quality
+FB-011,Sola Okonkwo,sola.okonkwo@gmail.com,Waited 90 minutes for a 20-minute delivery. No communication at all.,1,Negative,2,Delivery
+FB-012,Hauwa Adewale,hauwa.adewale@gmail.com,The suya was overcooked and dry. Expected much better quality for the price.,2,Negative,3,Food Quality
+FB-013,Dare Eze,dare.eze@gmail.com,I paid online but the rider demanded cash on delivery. Very confusing process.,2,Negative,3,Delivery
+FB-014,Chisom Ogunleye,chisom.ogunleye@gmail.com,Fried rice was undercooked and had a strange smell. Could not finish it.,1,Negative,3,Food Quality
+FB-015,Rotimi Nwosu,rotimi.nwosu@gmail.com,Amazing food as always. The moin moin was soft and well seasoned.,5,Positive,10,Positive
+FB-016,Aisha Adebayo,aisha.adebayo@gmail.com,The chicken was still pink inside. I got food poisoning after eating it.,1,Negative,2,Food Quality
+FB-017,Kunle Usman,kunle.usman@gmail.com,Rider called me 5 times while I was in a meeting. Very disruptive delivery experience.,2,Negative,3,Delivery
+FB-018,Ifunanya Salami,ifunanya.salami@gmail.com,I have ordered here 10 times and the quality keeps dropping. Very disappointing.,2,Negative,3,Food Quality
+FB-019,Seun Aliyu,seun.aliyu@gmail.com,The efo riro was watery and tasteless. Nothing like what I had last month.,2,Negative,3,Food Quality
+FB-020,Zainab Obi,zainab.obi@gmail.com,Best amala and ewedu I have ever tasted. The restaurant deserves more recognition.,5,Positive,10,Positive
+FB-021,Femi Dankwa,femi.dankwa@gmail.com,I was charged twice for one order. Still waiting for a refund after 5 days.,1,Negative,3,Customer Service
+FB-022,Blessing Garba,blessing.garba@gmail.com,The egusi soup had too much palm oil. Felt very heavy and greasy.,3,Negative,3,Food Quality
+FB-023,Tosin Yakubu,tosin.yakubu@gmail.com,My order arrived in a torn nylon bag. Everything was scattered inside.,2,Negative,3,Delivery
+FB-024,Chinyere Balogun,chinyere.balogun@gmail.com,The puff puff was raw inside. Dough completely uncooked. Very embarrassing for a restaurant.,1,Negative,3,Food Quality
+FB-025,Lanre Abdullahi,lanre.abdullahi@gmail.com,Food was great but ₦6000 for a small portion of catfish is highway robbery.,3,Negative,3,Pricing
+FB-026,Adaeze Suleiman,adaeze.suleiman@gmail.com,The delivery app showed delivered but nothing arrived. Rider is not picking up calls.,1,Negative,2,Delivery
+FB-027,Wale Eze,wale.eze@gmail.com,Ordered at 1pm and food arrived at 5pm with no apology or explanation.,1,Negative,3,Delivery
+FB-028,Halima Adeyinka,halima.adeyinka@gmail.com,The eba was too hard and the soup had barely any assorted meat in it.,2,Negative,3,Food Quality
+FB-029,Obinna Lawal,obinna.lawal@gmail.com,Staff at the counter ignored me for 10 minutes while chatting with colleagues.,2,Negative,3,Customer Service
+FB-030,Titi Musa,titi.musa@gmail.com,The grilled tilapia was fresh and perfectly seasoned. Excellent meal.,5,Positive,10,Positive
+FB-031,Kayode Eze,kayode.eze@gmail.com,Found a strand of hair in my banga soup. Lost my appetite immediately.,1,Negative,2,Food Quality
+FB-032,Rukayat Nwosu,rukayat.nwosu@gmail.com,The shawarma bread was stale and the filling was barely there.,2,Negative,3,Food Quality
+FB-033,Gbenga Umar,gbenga.umar@gmail.com,Delivery was fast and food was still hot. Really impressed this time around.,5,Positive,9,Positive
+FB-034,Amara Ogundimu,amara.ogundimu@gmail.com,I specifically said no pepper and the food was extremely spicy. Instructions ignored.,2,Negative,3,Food Quality
+FB-035,Idris Fashola,idris.fashola@gmail.com,The pepper soup was cold bland and served in a leaking container.,1,Negative,3,Food Quality
+FB-036,Yetunde Ibrahim,yetunde.ibrahim@gmail.com,Price increased by ₦800 from last week with no notice. Not acceptable.,2,Negative,3,Pricing
+FB-037,Nnamdi Lawal,nnamdi.lawal@gmail.com,The restaurant smelled unclean when I walked in. Puts you off the food.,2,Negative,3,Food Quality
+FB-038,Bimpe Garba,bimpe.garba@gmail.com,Moi moi was perfectly made. Reminded me of my grandmothers recipe.,5,Positive,10,Positive
+FB-039,Tola Okonkwo,tola.okonkwo@gmail.com,Cashier gave me wrong change and when I pointed it out she was dismissive.,2,Negative,3,Customer Service
+FB-040,Hauwa Fashola,hauwa.fashola@gmail.com,The rice was so salty I could not finish half of it. Seasoning needs serious work.,2,Negative,3,Food Quality
+FB-041,Segun Bello,segun.bello@gmail.com,No cutlery was included in the delivery bag. Had to eat with my hands.,3,Negative,3,Delivery
+FB-042,Chidinma Usman,chidinma.usman@gmail.com,The food was excellent but the packaging smelled like chemicals. Very off-putting.,3,Negative,3,Food Quality
+FB-043,Fola Abdullahi,fola.abdullahi@gmail.com,Ordered two meals and only one arrived. Driver claims he delivered both.,1,Negative,3,Delivery
+FB-044,Nkechi Suleiman,nkechi.suleiman@gmail.com,The catfish pepper soup was outstanding. Rich spicy and generous portion.,5,Positive,9,Positive
+FB-045,Taiwo Garba,taiwo.garba@gmail.com,I was put on hold for 20 minutes when I called to complain. Unacceptable.,2,Negative,2,Customer Service
+FB-046,Emeka Balogun,emeka.balogun@gmail.com,The jollof rice had stones in it. Nearly broke my tooth.,1,Negative,3,Food Quality
+FB-047,Khadija Adewale,khadija.adewale@gmail.com,Everything about this order was perfect. Will be recommending to friends.,5,Positive,10,Positive
+FB-048,Dayo Musa,dayo.musa@gmail.com,The beans was fermented and had a terrible sour smell when I opened it.,1,Negative,3,Food Quality
+FB-049,Zara Obi,zara.obi@gmail.com,Charged for extra drinks I never ordered. Bill does not match what I asked for.,2,Negative,3,Pricing
+FB-050,Temi Yakubu,temi.yakubu@gmail.com,Lovely ambience fast service and the ofada stew was rich and flavourful.,5,Positive,9,Positive

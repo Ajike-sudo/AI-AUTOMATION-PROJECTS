@@ -1,0 +1,315 @@
+{
+  "name": "Customer Feedback Analyser",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e2276a1d-2cbd-4be3-aec3-4c6a067bc442",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1hivUiLMHteDcaO8zUWoCpYtXcyDoCfTDu2nuk9XnSW4",
+          "mode": "list",
+          "cachedResultName": "Legacy_Restaurant_Feedback",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hivUiLMHteDcaO8zUWoCpYtXcyDoCfTDu2nuk9XnSW4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1044772280,
+          "mode": "list",
+          "cachedResultName": "Legacy_Restaurant_Feedback.csv",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hivUiLMHteDcaO8zUWoCpYtXcyDoCfTDu2nuk9XnSW4/edit#gid=1044772280"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "957066e7-eb6d-49b1-a9d9-4f4e53111280",
+      "name": "Feedback Data",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vyWCnmywuLBmJRyy",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        416,
+        176
+      ],
+      "id": "a65124fd-ebaa-45a3-b25b-06ddddfe864b",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "sYHFHuruEp566dsG",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a customer feedback analyst for a restaurant.\n\nAnalyze this comment and return a JSON object with sentiment and category.\n\nComment: {{ $json['Comment'] }}\n\nSentiment options: Positive, Negative, Neutral\nCategory options: Food Quality, Delivery, Customer Service, Pricing, Positive\n\nReturn only this JSON with no explanation:\n{\"sentiment\": \"Negative\", \"score\": 3, \"category\": \"Food Quality\"}\n\nRules:\n- score is 1 to 10 where 1 is most negative and 10 is most positive\n- Pick exactly one category\n- If the comment is positive use Positive as the category",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        416,
+        0
+      ],
+      "id": "baa664fa-ec1c-487c-888b-0f77e401a229",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "jsCode": "const llmItems = $input.all();\nconst sheetItems = $('Feedback Data').all();\n\nreturn llmItems.map((item, index) => {\n  const raw = String(item.json.text || '');\n  \n  const cleaned = raw\n    .replace(/```json\\n/g, '')\n    .replace(/```\\n/g, '')\n    .replace(/```/g, '')\n    .trim();\n\n  let sentiment = 'Unknown';\n  let score = 0;\n  let category = 'Uncategorised';\n\n  try {\n    const parsed = JSON.parse(cleaned);\n    sentiment = String(parsed.sentiment || 'Unknown');\n    score = Number(parsed.score || 0);\n    category = String(parsed.category || 'Uncategorised');\n  } catch(e) {\n    // keep defaults\n  }\n\n  const original = sheetItems[index].json;\n\n  return {\n    json: {\n      ...original,\n      sentiment,\n      score,\n      category\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        0
+      ],
+      "id": "c5d30d6f-84e3-43a7-8e0b-49577e635629",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1hivUiLMHteDcaO8zUWoCpYtXcyDoCfTDu2nuk9XnSW4",
+          "mode": "list",
+          "cachedResultName": "Legacy_Restaurant_Feedback",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hivUiLMHteDcaO8zUWoCpYtXcyDoCfTDu2nuk9XnSW4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1044772280,
+          "mode": "list",
+          "cachedResultName": "Legacy_Restaurant_Feedback.csv",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hivUiLMHteDcaO8zUWoCpYtXcyDoCfTDu2nuk9XnSW4/edit#gid=1044772280"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Feedback ID": "={{ $json['Feedback ID'] }}",
+            "Customer Name": "={{ $json['Customer Name'] }}",
+            "Email": "={{ $json.Email }}",
+            "Comment": "={{ $json.Comment }}",
+            "Rating (1-5)": "={{ $json['Rating (1-5)'] }}",
+            "Sentiment": "={{ $json.sentiment }}",
+            "Score": "={{ $json.score }}",
+            "Category": "={{ $json.category }}"
+          },
+          "matchingColumns": [
+            "Feedback ID"
+          ],
+          "schema": [
+            {
+              "id": "Feedback ID",
+              "displayName": "Feedback ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Customer Name",
+              "displayName": "Customer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Comment",
+              "displayName": "Comment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Rating (1-5)",
+              "displayName": "Rating (1-5)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sentiment",
+              "displayName": "Sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        976,
+        0
+      ],
+      "id": "368ab0b9-7049-4c55-9cfd-8b5a5df485d4",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vyWCnmywuLBmJRyy",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Feedback Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Feedback Data": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5b5a7a46-0042-46e2-8a4d-7d2a7c8c0f30",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f5ab498e275e9725e177cafa3e17310ea3d7785056a7471d1294d9e3d7d54c6f"
+  },
+  "id": "yEBuMEpt05iOWW5p",
+  "tags": []
+}
