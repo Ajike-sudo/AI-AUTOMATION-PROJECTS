@@ -1,0 +1,258 @@
+{
+  "name": "Weekly RCN Report",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 11,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "50858737-6668-4a4f-a98e-bacdb15e6deb",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1HxOhkVLMnbhJssGAjWoxI2b-HpW5IdrGjNPU1oFsXYk",
+          "mode": "list",
+          "cachedResultName": "Oyin's Workflow",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1HxOhkVLMnbhJssGAjWoxI2b-HpW5IdrGjNPU1oFsXYk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 784602654,
+          "mode": "list",
+          "cachedResultName": "Sales weekly KPI",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1HxOhkVLMnbhJssGAjWoxI2b-HpW5IdrGjNPU1oFsXYk/edit#gid=784602654"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "bb2b1c76-25b4-4776-8cb8-3d9182fb9954",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "j1ZkwgIxlqqKrhQc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(r => r.json);\n// Assumes rows are in chronological order (oldest to newest)\n\nconst current = rows[rows.length - 1];\nconst previous = rows[rows.length - 2];\n\nconst metrics = [\n  { label: 'Outgrowers Onboarded', key: 'Outgrowers Onboarded' },\n  { label: 'RCN Sold (kg)', key: 'RCN Sold (kg)' },\n  { label: 'Revenue (NGN)', key: 'Revenue (NGN)' },\n  { label: 'Leads Generated', key: 'Leads Generated' },\n  { label: 'Outstanding Debtors (NGN)', key: 'Outstanding Debtors (NGN)' }\n];\n\nfunction pctChange(curr, prev) {\n  const c = parseFloat(curr);\n  const p = parseFloat(prev);\n  if (p === 0) return { pct: null, direction: 'n/a (previous value was 0)' };\n  const pct = ((c - p) / p) * 100;\n  const direction = pct > 0 ? 'increase' : pct < 0 ? 'decrease' : 'no change';\n  return { pct: Math.abs(pct).toFixed(2), direction, raw: pct };\n}\n\nfunction average(values) {\n  return values.reduce((a, b) => a + b, 0) / values.length;\n}\n\nfunction stdDev(values) {\n  const avg = average(values);\n  const variance = average(values.map(v => (v - avg) ** 2));\n  return Math.sqrt(variance);\n}\n\n// Trend streak: how many consecutive weeks has this metric moved the same direction?\nfunction trendStreak(history) {\n  let streak = 1;\n  let dir = null;\n  for (let i = history.length - 1; i > 0; i--) {\n    const d = history[i] - history[i - 1];\n    const thisDir = d > 0 ? 'up' : d < 0 ? 'down' : 'flat';\n    if (dir === null) { dir = thisDir; continue; }\n    if (thisDir === dir && thisDir !== 'flat') { streak++; } else { break; }\n  }\n  return { direction: dir, weeks: streak };\n}\n\nlet output = `Legacy Farms — Weekly Sales KPI Report\\n`;\noutput += `Latest Week: ${current['Week']} (compared to ${previous['Week']})\\n\\n`;\noutput += `=== LATEST WEEK CHANGE ===\\n`;\n\nfor (const m of metrics) {\n  const prevVal = parseFloat(previous[m.key]);\n  const currVal = parseFloat(current[m.key]);\n  const { pct, direction } = pctChange(currVal, prevVal);\n  output += `${m.label}: ${prevVal} → ${currVal} (${pct !== null ? pct + '% ' + direction : direction})\\n`;\n}\n\noutput += `\\n=== PATTERN ANALYSIS (full history, ${rows.length} weeks) ===\\n`;\n\nfor (const m of metrics) {\n  const history = rows.map(r => parseFloat(r[m.key]));\n  const avg = average(history);\n  const sd = stdDev(history);\n  const latest = history[history.length - 1];\n  const streak = trendStreak(history);\n  const deviationFromAvg = (((latest - avg) / avg) * 100).toFixed(1);\n  const isVolatile = sd / avg > 0.3; // coefficient of variation threshold — flag if swings exceed 30% of the average\n  const isOutlier = Math.abs(latest - avg) > 1.5 * sd;\n\n  output += `\\n${m.label}:\\n`;\n  output += `  ${history.length}-week average: ${avg.toFixed(1)}\\n`;\n  output += `  Trend: ${streak.weeks >= 2 ? `${streak.weeks} consecutive weeks trending ${streak.direction}` : 'no sustained trend'}\\n`;\n  output += `  Latest week vs average: ${deviationFromAvg > 0 ? '+' : ''}${deviationFromAvg}%\\n`;\n  if (isVolatile) output += `  ⚠ Volatile: this metric swings more than 30% of its average week to week\\n`;\n  if (isOutlier) output += `  ⚠ Outlier: latest value is unusually far from its typical range\\n`;\n}\n\nreturn [{ json: { kpiData: output } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "8e512f58-13fd-460b-ae3d-9d37b0a20940",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json['kpiData'] }}",
+        "options": {
+          "systemMessage": "You are an operations analyst for Legacy Farms in Nigeria.\n\nYou will receive weekly KPI data. Use the Calculator tool to compute exact percentage changes between weeks before drawing conclusions.\n\nReturn your response as clean HTML only — no markdown, no backticks, no explanation. Just the HTML. Do not include <html>, <head>, or <body> tags — start directly from the content.\n\nUse this structure and styling:\n\n1. Header div: background #1A5276, padding 30px, centered white text \"Legacy Farms\" in 13px uppercase with letter spacing, below it \"Weekly Ops Digest\" in bold 24px white\n\n2. Content div: padding 30px, font Arial, color #333333\n\nStructure the content exactly like this:\n\n<h2 style=\"color: #1A5276;\">Executive Summary</h2>\n2 sentences summarising overall performance trend.\n\n<h2 style=\"color: #27AE60;\">What's On Track</h2>\nBullet points of metrics performing well with specific numbers and % change.\n\n<h2 style=\"color: #E67E22;\">What Needs Attention</h2>\nBullet points of metrics that dropped with exact % change from Calculator.\n\n<h2 style=\"color: #1A5276;\">Priority Actions</h2>\n3 numbered specific actionable recommendations.\n\n3. Footer div: centered, color #999999, font-size 12px — \"Legacy Farms · Ogbomoso, Oyo State, Nigeria\"\n\nBe direct. Use real numbers. No generic advice."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "6a2d5d2d-7d48-42ca-a2be-231f9fadc560",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        528,
+        240
+      ],
+      "id": "c3ccd134-1bea-4630-95ff-22eded4a77f3",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "FzIBT0n3Gf1kaRH7",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ \"legacy-farms-digest\" }}",
+        "contextWindowLength": 8
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        640,
+        256
+      ],
+      "id": "9c1f26cf-99d8-4636-a53c-319a5e09cca9",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        768,
+        240
+      ],
+      "id": "e3bd83d3-ab7f-4da6-90d6-0d7c2692d0a3",
+      "name": "Calculator"
+    },
+    {
+      "parameters": {
+        "sendTo": "onisemotobi@gmail.com",
+        "subject": "=Weekly Ops Digest — Legacy Farms — {{ $now.format('DD') }}",
+        "message": "={{ $json.output }} \n",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        976,
+        0
+      ],
+      "id": "3c33b0a3-e7a0-4dda-9d27-3fb256cd98c8",
+      "name": "Send a message",
+      "webhookId": "95888d5f-393a-4000-a5ad-cb0c3023f948",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "RQues57DluvqFmm1",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "3220450f-2276-49c9-bf85-a57551d1ca78",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3c2cdd1207679a799b0e435d3125d784dc00551b9a822e6931def7d26094ff74"
+  },
+  "nodeGroups": [],
+  "id": "fdsQqYLsHIobrRnw",
+  "tags": []
+}
