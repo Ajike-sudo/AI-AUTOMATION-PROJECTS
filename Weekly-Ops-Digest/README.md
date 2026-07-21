@@ -1,0 +1,37 @@
+# Project 01 — Weekly Ops Digest (AI Agent)
+
+## What This Does
+Runs every Monday, pulls weekly KPI data from Google Sheets, and sends a formatted HTML leadership digest by email. All variance math — single-week % change and multi-week pattern signals (trend streaks, volatility, outliers) — is computed in a Code node before the AI sees the data. The AI's job is narration and prioritization, plus optional derived calculations (e.g. ratios between two already-verified figures) using the Calculator tool — never recalculating the core KPI numbers themselves.
+
+## The Problem It Solves
+Leadership had no structured weekly visibility into operational performance. KPI reporting was manual, inconsistent, and never compared week-on-week or checked for sustained trends — so a metric could quietly decline for weeks before anyone noticed.
+
+## Tools Used
+- n8n
+- OpenAI (gpt-4o-mini)
+- Google Sheets
+- Gmail
+- Simple Memory
+
+## Workflow
+Schedule Trigger (Monday) → Google Sheets (Get Rows) → Code Node (compute latest-week variance + multi-week pattern analysis) → AI Agent (narrate + prioritize + write HTML digest) → Send Email
+
+## AI Nodes Used
+- AI Agent with Memory and Calculator tool. The Calculator is restricted to deriving new figures from numbers the Code node has already verified (e.g. debt-to-revenue ratio) — it is not used to recompute the KPI variances themselves.
+
+## Key Lessons
+- Letting the LLM compute percentage variances itself is unreliable. Testing caught a case where it labeled a value increase as a decrease. Moving the math into deterministic JavaScript removes this failure mode instead of just reducing it.
+- A single week-over-week comparison misses sustained patterns — a metric can look fine one week but be in a multi-week decline. The Code node now computes trend streaks, a rolling average comparison, and volatility/outlier flags across full history, so the AI can surface patterns that are quietly getting worse, not just this week's number.
+- A tool doesn't fix a reasoning error — it just executes the AI's reasoning more precisely. The original bug wasn't bad arithmetic, it was the AI mispairing which number was "before" and which was "after" before any calculation happened. Removing that reasoning step, not upgrading the tool, is what closed the bug.
+- The Calculator tool still has a real job: deriving new figures (like a debt-to-revenue ratio) from numbers the Code node has already verified. It's restricted to combining existing, correct figures — never to re-deriving the figures themselves — so it can't reopen the original bug through a different door.
+- The Code node outputs both a formatted text report and a structured set of exact numeric values (`namedValues`). Any Calculator use must draw from `namedValues`, not from numbers the AI reads out of the text — this keeps every calculation anchored to a known-correct source.
+- AI Agent Memory maintains conversational context across runs, separate from KPI history, which is now handled entirely by the Code node.
+- Session key must be a fixed string, not an expression, for memory to persist across runs.
+- Prompting the AI to return HTML directly removes the need for a separate formatting node.
+
+## Business Context
+Built for Legacy Farms — an agribusiness tracking outgrower onboarding, RCN sales, revenue, leads, and outstanding debtors weekly.
+
+## Dummy Data
+8 weeks of KPI data with deliberate dips in weeks 4, 6, and 8, used to verify both single-week variance accuracy and pattern-detection logic.
+
