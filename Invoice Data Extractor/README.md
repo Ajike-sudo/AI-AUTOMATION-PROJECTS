@@ -1,6 +1,6 @@
 [README.md](https://github.com/user-attachments/files/30331491/README.md)
 
-# Day 1 — Invoice Data Extractor
+# Project 1 — Invoice Data Extractor
 
 **Company context:** Crestline Retail & Distribution Ltd — a mid-sized Nigerian retail/distribution business
 
