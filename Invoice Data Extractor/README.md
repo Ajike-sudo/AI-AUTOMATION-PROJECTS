@@ -51,5 +51,3 @@ The underlying pattern here — extract structured data from an incoming documen
 - The single highest-cost failure mode here isn't sentiment or tone — it's a misread number. The design has to treat `total_amount` and `due_date` as the two fields worth extra scrutiny, not just "a field like any other."
 - An approval threshold only works if it's paired with an audit trail. The threshold decides who reviews; the log is what makes the decision inspectable after the fact.
 - Returning `null` on uncertain fields (instead of a best guess) is a small prompt change with an outsized effect — it turns "confidently wrong" into "visibly incomplete," which is the failure mode you want.
-
-See `governance-notes.md` for the full risk writeup.
