@@ -1,0 +1,689 @@
+{
+  "name": "Invoice Data Extractor",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "1316719e-67f0-4ba1-8ec2-0f4468073163",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "bAhuXiVeHXdzq2jb",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "=You extract structured invoice data from a supplier invoice image or PDF for Crestline Retail & Distribution Ltd. Return ONLY valid JSON, no commentary, no markdown code fences — output must start with { and end with }. Use exactly these field names, lowercase with underscores: vendor_name, invoice_number, invoice_date (YYYY-MM-DD), due_date (YYYY-MM-DD), currency, total_amount (number, no symbols or commas), line_items (array of {description, quantity, unit_price, line_total}). If a field is not present on the invoice, return null for that field rather than guessing. Do not infer or estimate any amount you cannot read directly from the document."
+            },
+            {
+              "type": "file",
+              "fileType": "base64",
+              "fileName": "=data"
+            }
+          ]
+        },
+        "simplify": false,
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "58282c6b-cb3a-4b3a-96d9-227e2633a86e",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "FzIBT0n3Gf1kaRH7",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dae5ddf2-b867-45bf-b212-efb0e159539e",
+              "name": "Vendor name",
+              "value": "={{ JSON.parse($json.output[0].content[0].text).vendor_name }}",
+              "type": "string"
+            },
+            {
+              "id": "52d14cc5-6d03-4707-8896-fd19287f83e1",
+              "name": "Invoice number",
+              "value": "={{ JSON.parse($json.output[0].content[0].text).invoice_number }}",
+              "type": "string"
+            },
+            {
+              "id": "3f3a73ce-820f-48e7-ab7e-1abec3820e92",
+              "name": "Invoice date",
+              "value": "={{ JSON.parse($json.output[0].content[0].text).invoice_date }}",
+              "type": "string"
+            },
+            {
+              "id": "a264b71d-1692-4b11-a06d-f878862c5712",
+              "name": "Due date",
+              "value": "={{ JSON.parse($json.output[0].content[0].text).due_date }}",
+              "type": "string"
+            },
+            {
+              "id": "4d60767e-5e23-4b8b-8ca0-edb65791a8e4",
+              "name": "Currency",
+              "value": "={{ JSON.parse($json.output[0].content[0].text).currency }}",
+              "type": "string"
+            },
+            {
+              "id": "13546d57-7033-4bab-bfc4-45348cddfb06",
+              "name": "Total Amount",
+              "value": "={{ Number(JSON.parse($json.output[0].content[0].text).total_amount) }}",
+              "type": "number"
+            },
+            {
+              "id": "24070cf2-bd39-4869-81e0-f951fe5cac29",
+              "name": "line_items_html",
+              "value": "={{ JSON.parse($json.output[0].content[0].text).line_items.map(li => 'description:' + li.description + ', quantity:' + li.quantity + ', unit_price:' + li.unit_price + ', line_total:' + li.line_total).join('\\n') }}",
+              "type": "string"
+            },
+            {
+              "id": "0432c7cf-857b-4bc7-bd7b-77f2f0d72572",
+              "name": "Source file ID",
+              "value": "={{ $('New Invoice In Drive').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "6244fa29-b946-47dd-9d7f-12c27228d756",
+              "name": "Source file name",
+              "value": "={{ $('New Invoice In Drive').item.json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "8a144951-a73b-4acb-9352-02ead4b13151",
+              "name": "Processed at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "3a2663cc-5a6b-47be-93b8-7e314aef7c4e",
+              "name": "Approval required",
+              "value": "={{ $json['Total Amount'] > 500000 }}",
+              "type": "string"
+            },
+            {
+              "id": "bd539cf0-4433-4360-8cba-350ea59a4e7f",
+              "name": "Status",
+              "value": "={{ $json['Total Amount'] > 500000 ? 'pending_approval' : 'auto_logged' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        752,
+        0
+      ],
+      "id": "f089ac06-8fda-4e34-a2ae-b5e88d310eee",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1MmGFmyATfLt1mJlORenLp8glHV4ruJ1R",
+          "mode": "list",
+          "cachedResultName": "Incoming Invoices",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1MmGFmyATfLt1mJlORenLp8glHV4ruJ1R"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1140467d-b15a-48d0-9f3f-90319ab9b062",
+      "name": "New Invoice In Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "bAhuXiVeHXdzq2jb",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0a4ddb64-7c10-4d48-a307-11f25e4cefe1",
+              "leftValue": "={{ $json['Total Amount'] }}",
+              "rightValue": 500000,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1072,
+        0
+      ],
+      "id": "86268135-22bc-489a-87f8-6c29e7a0dff6",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1byHkDFk0AoIm4nxkWQt9JemTZjBBRuveJaOH419RPZM",
+          "mode": "list",
+          "cachedResultName": "Crestline Invoice Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1byHkDFk0AoIm4nxkWQt9JemTZjBBRuveJaOH419RPZM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 10135586,
+          "mode": "list",
+          "cachedResultName": "Invoice_Log_TEMPLATE.csv",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1byHkDFk0AoIm4nxkWQt9JemTZjBBRuveJaOH419RPZM/edit#gid=10135586"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Approval required": "={{ $('Edit Fields').item.json['Approval required'] }}",
+            "Status": "={{ $('Edit Fields').item.json.Status }}",
+            "Due date": "={{ $('Edit Fields').item.json['Due date'] }}",
+            "Currency": "={{ $('Edit Fields').item.json.Currency }}",
+            "Total Amount": "={{ $('Edit Fields').item.json['Total Amount'] }}",
+            "Vendor name": "={{ $('Edit Fields').item.json['Vendor name'] }}",
+            "Invoice number": "={{ $('Edit Fields').item.json['Invoice number'] }}",
+            "Invoice date": "={{ $('Edit Fields').item.json['Invoice date'] }}",
+            "Source file ID": "={{ $('Edit Fields').item.json['Source file ID'] }}",
+            "Source file name": "={{ $('Edit Fields').item.json['Source file name'] }}",
+            "Processed at": "={{ $('Edit Fields').item.json['Processed at'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Vendor name",
+              "displayName": "Vendor name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice number",
+              "displayName": "Invoice number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice date",
+              "displayName": "Invoice date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Due date",
+              "displayName": "Due date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total Amount",
+              "displayName": "Total Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Approval required",
+              "displayName": "Approval required",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source file ID",
+              "displayName": "Source file ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source file name",
+              "displayName": "Source file name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Processed at",
+              "displayName": "Processed at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1968,
+        -112
+      ],
+      "id": "dcdf3321-59dd-4122-9d64-0e40082a3a63",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "j1ZkwgIxlqqKrhQc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1byHkDFk0AoIm4nxkWQt9JemTZjBBRuveJaOH419RPZM",
+          "mode": "list",
+          "cachedResultName": "Crestline Invoice Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1byHkDFk0AoIm4nxkWQt9JemTZjBBRuveJaOH419RPZM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 10135586,
+          "mode": "list",
+          "cachedResultName": "Invoice_Log_TEMPLATE.csv",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1byHkDFk0AoIm4nxkWQt9JemTZjBBRuveJaOH419RPZM/edit#gid=10135586"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Approval required": "={{ $('Edit Fields').item.json['Approval required'] }}",
+            "Status": "={{ $('Edit Fields').item.json.Status }}",
+            "Due date": "={{ $('Edit Fields').item.json['Due date'] }}",
+            "Currency": "={{ $('Edit Fields').item.json.Currency }}",
+            "Total Amount": "={{ $('Edit Fields').item.json['Total Amount'] }}",
+            "Vendor name": "={{ $('Edit Fields').item.json['Vendor name'] }}",
+            "Invoice number": "={{ $('Edit Fields').item.json['Invoice number'] }}",
+            "Invoice date": "={{ $('Edit Fields').item.json['Invoice date'] }}",
+            "Source file ID": "={{ $('Edit Fields').item.json['Source file ID'] }}",
+            "Source file name": "={{ $('Edit Fields').item.json['Source file name'] }}",
+            "Processed at": "={{ $('Edit Fields').item.json['Processed at'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Vendor name",
+              "displayName": "Vendor name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice number",
+              "displayName": "Invoice number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice date",
+              "displayName": "Invoice date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Due date",
+              "displayName": "Due date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total Amount",
+              "displayName": "Total Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Approval required",
+              "displayName": "Approval required",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source file ID",
+              "displayName": "Source file ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source file name",
+              "displayName": "Source file name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Processed at",
+              "displayName": "Processed at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1984,
+        176
+      ],
+      "id": "2550e0f1-cbf2-4c85-ace7-b38ce85f683c",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "j1ZkwgIxlqqKrhQc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "onisemotobi@gmail.com",
+        "subject": "=Approval needed: Invoice {{ $json['Invoice number'] }} from {{ $json['Vendor name'] }} (NGN {{ Number($json['Total Amount'].toString().replace(/[^0-9.]/g, '')).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }})",
+        "message": "=<div style=\"font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f4f4f4;\">\n  <div style=\"background-color: #1a2b4c; padding: 24px 32px; text-align: center;\">\n    <h1 style=\"color: #ffffff; font-size: 20px; margin: 0;\">Crestline Retail & Distribution Ltd</h1>\n    <p style=\"color: #b8c2d6; font-size: 13px; margin: 4px 0 0 0;\">Invoice Approval Required</p>\n  </div>\n  <div style=\"background-color: #ffffff; padding: 32px;\">\n    <p style=\"font-size: 15px; color: #333333; line-height: 1.5;\">\n      An invoice above the <strong>₦500,000</strong> auto-approval threshold was just extracted and needs sign-off before payment.\n    </p>\n    <table style=\"width: 100%; border-collapse: collapse; margin: 24px 0;\">\n      <tr><td style=\"padding: 8px 0; color: #666666; font-size: 14px; width: 140px;\">Vendor</td><td style=\"padding: 8px 0; color: #111111; font-size: 14px; font-weight: bold;\">{{ $json['Vendor name'] }}</td></tr>\n      <tr><td style=\"padding: 8px 0; color: #666666; font-size: 14px;\">Invoice #</td><td style=\"padding: 8px 0; color: #111111; font-size: 14px;\">{{ $json['Invoice number'] }}</td></tr>\n      <tr><td style=\"padding: 8px 0; color: #666666; font-size: 14px;\">Invoice date</td><td style=\"padding: 8px 0; color: #111111; font-size: 14px;\">{{ $json['Invoice date'] }}</td></tr>\n      <tr><td style=\"padding: 8px 0; color: #666666; font-size: 14px;\">Due date</td><td style=\"padding: 8px 0; color: #111111; font-size: 14px;\">{{ $json['Due date'] }}</td></tr>\n      <tr><td style=\"padding: 8px 0; color: #666666; font-size: 14px;\">Source file</td><td style=\"padding: 8px 0; color: #111111; font-size: 14px;\">{{ $json['Source file name'] }}</td></tr>\n    </table>\n    <div style=\"background-color: #fff4e5; border-left: 4px solid #e8891c; padding: 16px 20px; margin: 24px 0;\">\n      <p style=\"margin: 0; font-size: 13px; color: #8a5a12;\">AMOUNT DUE</p>\n      <p style=\"margin: 4px 0 0 0; font-size: 24px; color: #1a2b4c; font-weight: bold;\">{{ $json.Currency }} {{ Number($json['Total Amount'].toString().replace(/[^0-9.]/g, '')).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</p>\n    </div>\n    <p style=\"font-size: 13px; color: #666666; margin-top: 28px; margin-bottom: 8px;\">Line items</p>\n    <div style=\"background-color: #fafafa; border: 1px solid #eeeeee; border-radius: 4px; padding: 4px 16px;\">\n      {{ $json.line_items_html.split('\\n').map(line => {\n        let parts = line.split(', ');\n        let desc = parts[0] ? parts[0].replace('description:', '') : '';\n        let qty = parts[1] ? parts[1].replace('quantity:', '') : '';\n        let unitRaw = parts[2] ? parts[2].replace('unit_price:', '') : '0';\n        let totalRaw = parts[3] ? parts[3].replace('line_total:', '') : '0';\n        \n        let unitNum = Number(unitRaw.toString().replace(/[^0-9.]/g, '')).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});\n        let totalNum = Number(totalRaw.toString().replace(/[^0-9.]/g, '')).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});\n\n        return '<div style=\"padding:12px 0;border-top:1px solid #eeeeee;\"><div style=\"font-weight:bold;color:#111111;font-size:14px;margin-bottom:4px;\">' + desc + '</div><div style=\"font-size:13px;color:#666666;\">Qty ' + qty + ' · Unit ₦' + unitNum + ' · Total ₦' + totalNum + '</div></div>';\n      }).join('') }}\n    </div>\n    <p style=\"font-size: 12px; color: #999999; font-style: italic; margin-top: 16px;\">This is an AI extraction, confirm against the source document before approving payment.</p>\n  </div>\n  <div style=\"background-color: #1a2b4c; padding: 16px 32px; text-align: center;\">\n    <p style=\"color: #8a99b8; font-size: 11px; margin: 0;\">Crestline Retail & Distribution Ltd · Automated Invoice Processing · Do not reply to this email</p>\n  </div>\n</div>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1584,
+        -112
+      ],
+      "id": "bdb78461-a61a-4510-a89e-614280385b0b",
+      "name": "Snr Accountant Approval",
+      "webhookId": "6f3922f7-5b57-465c-a776-37c5f0d17c2e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "RQues57DluvqFmm1",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "onisemotobi@gmail.com",
+        "subject": "=Payment processing required: Invoice {{ $json['Invoice number'] }} from {{ $json['Vendor name'] }} (NGN {{ Number($json['Total Amount'].toString().replace(/[^0-9.]/g, '')).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }})",
+        "message": "=<div style=\"font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f4f4f4;\">\n  \n  <div style=\"background-color: #1a2b4c; padding: 24px 32px; text-align: center;\">\n    <h1 style=\"color: #ffffff; font-size: 20px; margin: 0;\">Crestline Retail & Distribution Ltd</h1>\n    <p style=\"color: #b8c2d6; font-size: 13px; margin: 4px 0 0 0;\">\n      Invoice Approved for Processing\n    </p>\n  </div>\n\n  <div style=\"background-color: #ffffff; padding: 32px;\">\n\n    <p style=\"font-size: 15px; color: #333333; line-height: 1.6;\">\n      An invoice below the <strong>₦500,000</strong> approval threshold has been successfully extracted and approved for payment processing.\n    </p>\n\n    <p style=\"font-size: 15px; color: #333333; line-height: 1.6;\">\n      Please process payment within <strong>48 hours</strong> in line with the company's payment policy.\n    </p>\n\n    <table style=\"width: 100%; border-collapse: collapse; margin: 24px 0;\">\n      <tr>\n        <td style=\"padding: 8px 0; color: #666666; font-size: 14px; width: 140px;\">Vendor</td>\n        <td style=\"padding: 8px 0; color: #111111; font-size: 14px; font-weight: bold;\">\n          {{ $json['Vendor name'] }}\n        </td>\n      </tr>\n\n      <tr>\n        <td style=\"padding: 8px 0; color: #666666; font-size: 14px;\">Invoice #</td>\n        <td style=\"padding: 8px 0; color: #111111; font-size: 14px;\">\n          {{ $json['Invoice number'] }}\n        </td>\n      </tr>\n\n      <tr>\n        <td style=\"padding: 8px 0; color: #666666; font-size: 14px;\">Invoice date</td>\n        <td style=\"padding: 8px 0; color: #111111; font-size: 14px;\">\n          {{ $json['Invoice date'] }}\n        </td>\n      </tr>\n\n      <tr>\n        <td style=\"padding: 8px 0; color: #666666; font-size: 14px;\">Due date</td>\n        <td style=\"padding: 8px 0; color: #111111; font-size: 14px;\">\n          {{ $json['Due date'] }}\n        </td>\n      </tr>\n\n      <tr>\n        <td style=\"padding: 8px 0; color: #666666; font-size: 14px;\">Source file</td>\n        <td style=\"padding: 8px 0; color: #111111; font-size: 14px;\">\n          {{ $json['Source file name'] }}\n        </td>\n      </tr>\n    </table>\n\n    <div style=\"background-color:#eaf7ee;border-left:4px solid #2e7d32;padding:16px 20px;margin:24px 0;\">\n\n      <p style=\"margin:0;font-size:13px;color:#2e7d32;font-weight:bold;\">\n        PAYMENT STATUS\n      </p>\n\n      <p style=\"margin:6px 0 0 0;font-size:22px;color:#1a2b4c;font-weight:bold;\">\n        Approved for Processing\n      </p>\n\n      <p style=\"margin:14px 0 0 0;font-size:14px;color:#555555;\">\n        Amount Due\n      </p>\n\n      <p style=\"margin:4px 0 0 0;font-size:28px;color:#1a2b4c;font-weight:bold;\">\n        {{ $json.Currency }}\n        {{ Number($json['Total Amount'].toString().replace(/[^0-9.]/g, '')).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}\n      </p>\n\n      <p style=\"margin:12px 0 0 0;font-size:13px;color:#555555;\">\n        Please ensure payment is completed within\n        <strong>48 hours.</strong>\n      </p>\n\n    </div>\n\n    <p style=\"font-size:13px;color:#666666;margin-top:28px;margin-bottom:8px;\">\n      Line Items\n    </p>\n\n    <div style=\"background-color:#fafafa;border:1px solid #eeeeee;border-radius:4px;padding:4px 16px;\">\n\n      {{\n      $json.line_items_html\n      .split('\\n')\n      .map(line => {\n\n        let parts = line.split(', ');\n\n        let desc = parts[0] ? parts[0].replace('description:', '') : '';\n        let qty = parts[1] ? parts[1].replace('quantity:', '') : '';\n        let unitRaw = parts[2] ? parts[2].replace('unit_price:', '') : '0';\n        let totalRaw = parts[3] ? parts[3].replace('line_total:', '') : '0';\n\n        let unitNum = Number(\n          unitRaw.toString().replace(/[^0-9.]/g,'')\n        ).toLocaleString('en-US',{\n          minimumFractionDigits:2,\n          maximumFractionDigits:2\n        });\n\n        let totalNum = Number(\n          totalRaw.toString().replace(/[^0-9.]/g,'')\n        ).toLocaleString('en-US',{\n          minimumFractionDigits:2,\n          maximumFractionDigits:2\n        });\n\n        return `\n          <div style=\"padding:12px 0;border-top:1px solid #eeeeee;\">\n            <div style=\"font-weight:bold;color:#111111;font-size:14px;margin-bottom:4px;\">\n              ${desc}\n            </div>\n\n            <div style=\"font-size:13px;color:#666666;\">\n              Qty ${qty}\n              &nbsp;&nbsp;•&nbsp;&nbsp;\n              Unit ₦${unitNum}\n              &nbsp;&nbsp;•&nbsp;&nbsp;\n              Total ₦${totalNum}\n            </div>\n          </div>\n        `;\n\n      }).join('')\n      }}\n\n    </div>\n\n    <p style=\"font-size:12px;color:#999999;font-style:italic;margin-top:18px;\">\n      This invoice was automatically approved because it falls below the company's ₦500,000 approval threshold. Please verify the extracted information against the source document before processing payment.\n    </p>\n\n  </div>\n\n  <div style=\"background-color:#1a2b4c;padding:16px 32px;text-align:center;\">\n    <p style=\"color:#8a99b8;font-size:11px;margin:0;\">\n      Crestline Retail & Distribution Ltd · Automated Invoice Processing · Do not reply to this email\n    </p>\n  </div>\n\n</div>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1584,
+        176
+      ],
+      "id": "8ca8a905-13cc-41a2-8be7-88c1e9326f76",
+      "name": "Jnr Accountant Processing Notif",
+      "webhookId": "52af25f9-2221-4627-9238-c7146c8cfb95",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "RQues57DluvqFmm1",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Invoice In Drive": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Snr Accountant Approval",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Jnr Accountant Processing Notif",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet1": {
+      "main": [
+        []
+      ]
+    },
+    "Snr Accountant Approval": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Jnr Accountant Processing Notif": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "00279065-1f49-493e-b5e5-845f82e06f6b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3c2cdd1207679a799b0e435d3125d784dc00551b9a822e6931def7d26094ff74"
+  },
+  "nodeGroups": [],
+  "id": "wwh4Pcm48xkGdrZK",
+  "tags": []
+}
