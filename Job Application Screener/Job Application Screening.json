@@ -1,0 +1,823 @@
+{
+  "name": "Job Application Screening",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "972e1375-aa1d-433d-a386-c08bf9b9b529",
+              "name": "cv field id",
+              "value": "={{ $json['Upload Your CV'].split('id=')[1] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        80,
+        0
+      ],
+      "id": "cf422655-0e9a-4b5e-8ee0-6ed7e25deb73",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json['cv field id'] }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        272,
+        0
+      ],
+      "id": "dfcb81c7-6f6f-42b5-823e-7e79f05fbff7",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "bAhuXiVeHXdzq2jb",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4",
+          "mode": "list",
+          "cachedResultName": "GPT-4"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "=You extract structured information from a job applicant's CV for Crestline Retail & Distribution Ltd. Return ONLY valid JSON, no commentary, no markdown code fences — output must start with { and end with }. Use exactly these field names: \"Years Experience\" (a number, your best estimate based on total relevant work history described), \"Highest Education\" (the highest qualification stated, e.g. \"BSc\", \"OND\", \"SSCE\"), \"Education Field\" (the field of study, if stated), \"Key Skills\" (an array of strings — the skills, competencies, or areas of expertise explicitly stated or clearly demonstrated in the work history). If a field cannot be determined from the CV, return null for it rather than guessing."
+            },
+            {
+              "type": "file",
+              "fileType": "base64",
+              "fileName": "=data"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        0
+      ],
+      "id": "75f5d811-0ebf-48fd-8e1f-8a896341ae67",
+      "name": "CV Extraction",
+      "credentials": {
+        "openAiApi": {
+          "id": "FzIBT0n3Gf1kaRH7",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1eFcOuCJO5QThHY0sQBIOr738sX6g7sAMz6hsgUlSNfw",
+          "mode": "list",
+          "cachedResultName": "Crestline Retail & Distribution Ltd — Job Application  (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eFcOuCJO5QThHY0sQBIOr738sX6g7sAMz6hsgUlSNfw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1070032197,
+          "mode": "list",
+          "cachedResultName": "Role Requirements",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eFcOuCJO5QThHY0sQBIOr738sX6g7sAMz6hsgUlSNfw/edit#gid=1070032197"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Role",
+              "lookupValue": "={{ $('Application Submission').item.json['Role Applied For'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        768,
+        0
+      ],
+      "id": "35a3f562-a48b-449f-b726-41c85412cddd",
+      "name": "Role Requirement Lookup",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "j1ZkwgIxlqqKrhQc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4",
+          "mode": "list",
+          "cachedResultName": "GPT-4"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "=You score a job applicant for a specific role at Crestline Retail & Distribution Ltd, using their CV data, cover letter, and that role's defined requirements. You are producing a recommendation for a human recruiter — you are not making a hiring decision.\n\nROLE REQUIREMENTS FOR THIS APPLICATION:\nRole: {{ $('Role Requirement Lookup').item.json['Role'] }}\nRequired Experience: {{ $('Role Requirement Lookup').item.json['Required Experience'] }}\nRequired Education: {{ $('Role Requirement Lookup').item.json['Required Education'] }}\nKey Skills: {{ $('Role Requirement Lookup').item.json['Key Skills'] }}\nCover Letter Expectations: {{ $('Role Requirement Lookup').item.json['Cover Letter Expectations'] }}\n\nCANDIDATE DATA:\nYears of Experience: {{ JSON.parse($('CV Extraction').first().json.output[0].content[0].text)['Years Experience'] }}\nHighest Education: {{ JSON.parse($('CV Extraction').first().json.output[0].content[0].text)['Highest Education'] }} in {{ JSON.parse($('CV Extraction').first().json.output[0].content[0].text)['Education Field'] }}\nKey Skills (from CV): {{ JSON.stringify(JSON.parse($('CV Extraction').first().json.output[0].content[0].text)['Key Skills']) }}\nCover Letter:{{ $('Application Submission').item.json['Tell Us Why You\\'re A Good Fit For This Role'] }}\n\nScore the candidate against these four criteria, each 0-25 (total out of 100), calibrated specifically against the role requirements above — not generic standards:\n1. Experience match — how their years/type of experience compares to what this specific role requires.\n2. Education fit — how their qualification compares to what this specific role requires.\n3. Skills match — how their demonstrated skills compare to this role's required key skills.\n4. Cover letter fit — how well their cover letter meets this role's specific cover letter expectations (clarity, relevance, evidence of the traits described, not just length or politeness).\n\nFor each criterion, give the score and a one-sentence reason citing the actual comparison (e.g., \"Required 3+ years, candidate has 8 — exceeds requirement\"). Then give: Total Score, Tier (\"Strong Fit\" if total >= 75, \"Consider\" if 50-74, \"Weak Fit\" if below 50), and a 2-sentence Overall Reasoning.\n\nDo not infer or weigh protected characteristics (age, gender, ethnicity, religion, marital/family status, disability) even if visible in the data.\n\nReturn ONLY valid JSON, no markdown code fences: {\"Criteria\": [{\"Name\": \"\", \"Score\": 0, \"Reason\": \"\"}], \"Total Score\": 0, \"Tier\": \"\", \"Overall Reasoning\": \"\"}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -112,
+        368
+      ],
+      "id": "d7a7224b-fe97-46e2-9a3a-f8b167749fdf",
+      "name": "Applicant Scoring",
+      "credentials": {
+        "openAiApi": {
+          "id": "FzIBT0n3Gf1kaRH7",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1eFcOuCJO5QThHY0sQBIOr738sX6g7sAMz6hsgUlSNfw",
+          "mode": "list",
+          "cachedResultName": "Crestline Retail & Distribution Ltd — Job Application  (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eFcOuCJO5QThHY0sQBIOr738sX6g7sAMz6hsgUlSNfw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1496676211,
+          "mode": "list",
+          "cachedResultName": "Form Responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eFcOuCJO5QThHY0sQBIOr738sX6g7sAMz6hsgUlSNfw/edit#gid=1496676211"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        0
+      ],
+      "id": "f51d098a-fd8a-48f3-a776-d144d207d86e",
+      "name": "Application Submission",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "IGxG0aiNiQu4ncRV",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c05d587d-add5-4417-96b5-6a6b1b40c02f",
+              "name": "Total Score",
+              "value": "={{ JSON.parse($json.output[0].content[0].text)['Total Score'] }}",
+              "type": "number"
+            },
+            {
+              "id": "f60be33d-6977-4adc-9e9f-72723a2875f0",
+              "name": "Tier",
+              "value": "={{ JSON.parse($json.output[0].content[0].text)['Tier'] }}",
+              "type": "string"
+            },
+            {
+              "id": "8f9d30d7-9c69-4d18-8863-5a3d8e511ba7",
+              "name": "Overall Reasoning",
+              "value": "={{ JSON.parse($json.output[0].content[0].text)['Overall Reasoning'] }}",
+              "type": "string"
+            },
+            {
+              "id": "154f3805-be13-438c-bbe7-0057fd0330ab",
+              "name": "Criteria Breakdown",
+              "value": "={{ JSON.stringify(JSON.parse($json.output[0].content[0].text)['Criteria']) }}",
+              "type": "string"
+            },
+            {
+              "id": "9c7db560-4e72-43d6-bffd-bad3c71f95a6",
+              "name": "Screened At",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "f37199d1-8d6d-4f06-b3a8-787ba4da3f59",
+              "name": "Candidate Name",
+              "value": "={{ $('Application Submission').item.json['Full Name'] }}",
+              "type": "string"
+            },
+            {
+              "id": "d336ecd4-4d69-4454-bd5b-2e31a470b7cc",
+              "name": "Candidate Email",
+              "value": "={{ $('Application Submission').item.json['Email Address'] }}",
+              "type": "string"
+            },
+            {
+              "id": "8579e6da-7a0c-4beb-9dc1-e196cd6ae0f4",
+              "name": "Role Applied For",
+              "value": "={{ $('Application Submission').item.json['Role Applied For'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        368
+      ],
+      "id": "7d32112e-636e-404c-8b30-e2e1de082918",
+      "name": "Score Result"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "51938640-68c8-49fc-83f3-6b24b6114509",
+              "leftValue": "={{ $json['Total Score'] }}",
+              "rightValue": 75,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        432,
+        368
+      ],
+      "id": "9d1f1c74-25f0-4ba4-99fb-0a5dd00f4a63",
+      "name": "If Score >= 75"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "53f4bf6b-c670-4c32-85bc-51b55b88b8bf",
+              "leftValue": "={{ $('Score Result').item.json['Total Score'] }}",
+              "rightValue": 60,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        896,
+        480
+      ],
+      "id": "d3f27505-d6b7-4cf5-a836-71c93808c7a3",
+      "name": "If Score <60"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json['Candidate Email'] }}",
+        "subject": "=Job Application Update — {{ $json['Role Applied For'] }} at Crestline Retail & Distribution Ltd",
+        "message": "=<div style=\"font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f4f4f4;\">   <div style=\"background-color: #1a2b4c; padding: 24px 32px; text-align: center;\">     <h1 style=\"color: #ffffff; font-size: 20px; margin: 0;\">Crestline Retail & Distribution Ltd</h1>   </div>   <div style=\"background-color: #ffffff; padding: 32px;\">     <p style=\"font-size: 15px; color: #333333; line-height: 1.6;\">       Dear {{ $json['Candidate Name'] }},     </p>     <p style=\"font-size: 15px; color: #333333; line-height: 1.6;\">       Thank you for applying for the {{ $json['Role Applied For'] }} role at Crestline Retail & Distribution Ltd, and for taking the time to share your CV and cover letter with us.     </p>     <p style=\"font-size: 15px; color: #333333; line-height: 1.6;\">       After careful review, we've decided not to move forward with your application for this particular role. This decision reflects our current needs for this position and not a judgment on your overall qualifications or potential.     </p>     <p style=\"font-size: 15px; color: #333333; line-height: 1.6;\">       We'll keep your details on file and encourage you to apply for future openings that match your background.     </p>     <p style=\"font-size: 15px; color: #333333; line-height: 1.6;\">       We wish you the best in your job search.     </p>   </div>   <div style=\"background-color: #1a2b4c; padding: 16px 32px; text-align: center;\">     <p style=\"color: #8a99b8; font-size: 11px; margin: 0;\">Crestline Retail & Distribution Ltd · Do not reply to this email</p>   </div> </div>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1184,
+        464
+      ],
+      "id": "8da247ea-35ac-4784-a3f6-411f9f3334b0",
+      "name": "Rejection Mail",
+      "webhookId": "601f6dd4-f366-43a7-ac34-36947cc11637",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "RQues57DluvqFmm1",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "theleanoperator@gmail.com",
+        "subject": "=Strong Fit: {{ $json['Candidate Name'] }} — {{ $json[' Role Applied For'] }}({{ $json['Total Score'] }}/100)",
+        "message": "=<div style=\"font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f4f4f4;\">\n  <div style=\"background-color: #1a2b4c; padding: 24px 32px; text-align: center;\">\n    <h1 style=\"color: #ffffff; font-size: 20px; margin: 0;\">Crestline Retail & Distribution Ltd</h1>\n    <p style=\"color: #b8c2d6; font-size: 13px; margin: 4px 0 0 0;\">Strong Fit Candidate — HR Review</p>\n  </div>\n  <div style=\"background-color: #ffffff; padding: 32px;\">\n    <p style=\"font-size: 15px; color: #333333; line-height: 1.5;\">\n      A candidate has scored Strong Fit for an open role. No candidate is auto-advanced — this is a recommendation for your review.\n    </p>\n    <table style=\"width: 100%; border-collapse: collapse; margin: 24px 0;\">\n      <tr><td style=\"padding: 8px 0; color: #666666; font-size: 14px; width: 140px;\">Candidate</td><td style=\"padding: 8px 0; color: #111111; font-size: 14px; font-weight: bold;\">{{ $json['Candidate Name'] }}</td></tr>\n      <tr><td style=\"padding: 8px 0; color: #666666; font-size: 14px;\">Email</td><td style=\"padding: 8px 0; color: #111111; font-size: 14px;\">{{ $json['Candidate Email'] }}</td></tr>\n      <tr><td style=\"padding: 8px 0; color: #666666; font-size: 14px;\">Role</td><td style=\"padding: 8px 0; color: #111111; font-size: 14px;\">{{ $json[' Role Applied For'] }}</td></tr>\n      <tr><td style=\"padding: 8px 0; color: #666666; font-size: 14px;\">Score</td><td style=\"padding: 8px 0; color: #111111; font-size: 14px;\">{{ $json['Total Score'] }}/100 ({{ $json['Tier'] }})</td></tr>\n    </table>\n    <p style=\"font-size: 13px; color: #666666; margin-top: 20px;\">{{ $json['Overall Reasoning'] }}</p>\n  </div>\n  <div style=\"background-color: #1a2b4c; padding: 16px 32px; text-align: center;\">\n    <p style=\"color: #8a99b8; font-size: 11px; margin: 0;\">Crestline Retail & Distribution Ltd · Automated Screening · Do not reply to this email</p>\n  </div>\n</div>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        256
+      ],
+      "id": "3391b066-fba7-4b20-8e32-210fe0c59c84",
+      "name": "Notify HR to set Interview",
+      "webhookId": "31a1e3cf-4249-4434-848a-5feef6526614",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "RQues57DluvqFmm1",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1eFcOuCJO5QThHY0sQBIOr738sX6g7sAMz6hsgUlSNfw",
+          "mode": "list",
+          "cachedResultName": "Crestline Retail & Distribution Ltd — Job Application  (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eFcOuCJO5QThHY0sQBIOr738sX6g7sAMz6hsgUlSNfw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 411859690,
+          "mode": "list",
+          "cachedResultName": "Screened Candidates",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eFcOuCJO5QThHY0sQBIOr738sX6g7sAMz6hsgUlSNfw/edit#gid=411859690"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Total Score": "={{ $('Score Result').item.json['Total Score'] }}",
+            "Tier": "={{ $('Score Result').item.json.Tier }}",
+            "Overall Reasoning": "={{ $('Score Result').item.json['Overall Reasoning'] }}",
+            " Criteria Breakdown": "={{ $('Score Result').item.json['Criteria Breakdown'] }}",
+            "Screened At": "={{ $('Score Result').item.json['Screened At'] }}",
+            "Candidate Name": "={{ $('Score Result').item.json['Candidate Name'] }}",
+            "Candidate Email": "={{ $('Score Result').item.json['Candidate Email'] }}",
+            " Role Applied For": "={{ $('Score Result').item.json['Role Applied For'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Candidate Name",
+              "displayName": "Candidate Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Candidate Email",
+              "displayName": "Candidate Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": " Role Applied For",
+              "displayName": " Role Applied For",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total Score",
+              "displayName": "Total Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tier",
+              "displayName": "Tier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Overall Reasoning",
+              "displayName": "Overall Reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": " Criteria Breakdown",
+              "displayName": " Criteria Breakdown",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Screened At",
+              "displayName": "Screened At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Recruiter Decision",
+              "displayName": "Recruiter Decision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        656,
+        480
+      ],
+      "id": "da37710b-9873-425a-8189-f57f4bfac2a4",
+      "name": "Screened Applicants",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "j1ZkwgIxlqqKrhQc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1eFcOuCJO5QThHY0sQBIOr738sX6g7sAMz6hsgUlSNfw",
+          "mode": "list",
+          "cachedResultName": "Crestline Retail & Distribution Ltd — Job Application  (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eFcOuCJO5QThHY0sQBIOr738sX6g7sAMz6hsgUlSNfw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1170312955,
+          "mode": "list",
+          "cachedResultName": "Shortlist",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eFcOuCJO5QThHY0sQBIOr738sX6g7sAMz6hsgUlSNfw/edit#gid=1170312955"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Total Score": "={{ $json['Total Score'] }}",
+            "Tier": "={{ $json.Tier }}",
+            "Overall Reasoning": "={{ $json['Overall Reasoning'] }}",
+            " Criteria Breakdown": "={{ $json['Criteria Breakdown'] }}",
+            "Screened At": "={{ $json['Screened At'] }}",
+            " Role Applied For": "={{ $json['Role Applied For'] }}",
+            "Candidate Email": "={{ $json['Candidate Email'] }}",
+            "Candidate Name": "={{ $json['Candidate Name'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Candidate Name",
+              "displayName": "Candidate Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Candidate Email",
+              "displayName": "Candidate Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": " Role Applied For",
+              "displayName": " Role Applied For",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total Score",
+              "displayName": "Total Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tier",
+              "displayName": "Tier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Overall Reasoning",
+              "displayName": "Overall Reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": " Criteria Breakdown",
+              "displayName": " Criteria Breakdown",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Screened At",
+              "displayName": "Screened At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Recruiter Decision",
+              "displayName": "Recruiter Decision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        256
+      ],
+      "id": "fce4b51f-17b4-45d0-b77c-598c162a3044",
+      "name": "Shortlisted Applicants",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "j1ZkwgIxlqqKrhQc",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Role Requirement Lookup": [
+      {
+        "json": {
+          "row_number": 4,
+          "Role": "Procurement Officer",
+          "Required Experience": "3+ years in procurement, purchasing, or supply chain",
+          "Required Education": "BSc in a related field (Purchasing & Supply, Business, etc.)",
+          "Key Skills": "Vendor negotiation, contract management, cost analysis",
+          "Cover Letter Expectations": "Shows understanding of procurement's role in the business, specific not generic"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "CV Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CV Extraction": {
+      "main": [
+        [
+          {
+            "node": "Role Requirement Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Role Requirement Lookup": {
+      "main": [
+        [
+          {
+            "node": "Applicant Scoring",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Application Submission": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Applicant Scoring": {
+      "main": [
+        [
+          {
+            "node": "Score Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score Result": {
+      "main": [
+        [
+          {
+            "node": "If Score >= 75",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Score >= 75": {
+      "main": [
+        [
+          {
+            "node": "Shortlisted Applicants",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Screened Applicants",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Score <60": {
+      "main": [
+        [
+          {
+            "node": "Rejection Mail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Screened Applicants": {
+      "main": [
+        [
+          {
+            "node": "If Score <60",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shortlisted Applicants": {
+      "main": [
+        [
+          {
+            "node": "Notify HR to set Interview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "25249817-3ddb-4f03-a236-17828597914e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3c2cdd1207679a799b0e435d3125d784dc00551b9a822e6931def7d26094ff74"
+  },
+  "nodeGroups": [],
+  "id": "oGZHXMCZxMZg8Ne1",
+  "tags": []
+}
